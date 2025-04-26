@@ -29,8 +29,9 @@ services:
       - SITE_NAME=${SITE_NAME}
     volumes:
       - type: bind
-        source: ./docker
-        target: /workspace
+        source: ./docker/init.sh
+        target: /workspace/init.sh
+        read_only: true
     labels:
       - traefik.enable=true
       - "traefik.http.routers.crm.rule=Host(`${SITE_NAME}`)"
