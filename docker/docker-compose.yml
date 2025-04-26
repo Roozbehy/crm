@@ -18,18 +18,13 @@ services:
 
   bench:
     image: frappe/bench:latest
-    # ---- THE ONLY CHANGE ------------
     command: >
-      bash -c "
-        if [ ! -f /init.sh ]; then
-          echo 'Fetching init.sh...' ;
-          wget -q -O /init.sh \
-            https://raw.githubusercontent.com/frappe/crm/develop/docker/init.sh &&
-          chmod +x /init.sh ;
-        fi &&
-        bash /init.sh
-      "
-    # ---------------------------------
+      bash -c 'if [ ! -f /init.sh ]; then
+        echo "Fetching init.sh…" &&
+        wget -qO /init.sh https://raw.githubusercontent.com/frappe/crm/develop/docker/init.sh &&
+        chmod +x /init.sh
+      fi &&
+      bash /init.sh'
     working_dir: /home/frappe
     depends_on:
       - mariadb
