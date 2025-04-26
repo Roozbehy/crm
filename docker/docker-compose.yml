@@ -18,8 +18,18 @@ services:
 
   bench:
     image: frappe/bench:latest
-    # run the script we bind-mount as a single file
-    command: bash /init.sh
+    # ---- THE ONLY CHANGE ------------
+    command: >
+      bash -c "
+        if [ ! -f /init.sh ]; then
+          echo 'Fetching init.sh...' ;
+          wget -q -O /init.sh \
+            https://raw.githubusercontent.com/frappe/crm/develop/docker/init.sh &&
+          chmod +x /init.sh ;
+        fi &&
+        bash /init.sh
+      "
+    # ---------------------------------
     working_dir: /home/frappe
     depends_on:
       - mariadb
@@ -29,12 +39,6 @@ services:
       - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - SITE_NAME=${SITE_NAME}
     volumes:
-      # ① bind only the script file (Coolify will not rewrite this)
-      - type: bind
-        source: ./docker/init.sh      # path inside the repo
-        target: /init.sh
-        read_only: true
-      # ② persist the bench data/sites
       - bench-sites:/home/frappe/frappe-bench
     labels:
       - traefik.enable=true
