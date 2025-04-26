@@ -18,13 +18,6 @@ services:
 
   bench:
     image: frappe/bench:latest
-    command: >
-      bash -c 'if [ ! -f /init.sh ]; then
-        echo "Fetching init.sh…" &&
-        wget -qO /init.sh https://raw.githubusercontent.com/frappe/crm/develop/docker/init.sh &&
-        chmod +x /init.sh
-      fi &&
-      bash /init.sh'
     working_dir: /home/frappe
     depends_on:
       - mariadb
@@ -33,6 +26,32 @@ services:
       - SHELL=/bin/bash
       - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - SITE_NAME=${SITE_NAME}
+    # Inline the init.sh logic here:
+    command: >
+      bash -c "
+        echo '>>> Initializing bench…' &&
+        bench init --skip-redis-config-generation frappe-bench &&
+        cd frappe-bench &&
+        bench set-mariadb-host mariadb &&
+        bench set-redis-cache-host redis:6379 &&
+        bench set-redis-queue-host redis:6379 &&
+        bench set-redis-socketio-host redis:6379 &&
+        sed -i '/redis/d' ./Procfile &&
+        sed -i '/watch/d' ./Procfile &&
+        bench get-app crm --branch develop &&
+        bench new-site ${SITE_NAME} \
+          --force \
+          --mariadb-root-password ${DB_ROOT_PASSWORD} \
+          --admin-password admin \
+          --no-mariadb-socket &&
+        bench --site ${SITE_NAME} install-app crm &&
+        bench --site ${SITE_NAME} set-config developer_mode 0 &&
+        bench --site ${SITE_NAME} clear-cache &&
+        bench --site ${SITE_NAME} set-config mute_emails 1 &&
+        bench use ${SITE_NAME} &&
+        bench start
+      "
+    # Persist your sites & code:
     volumes:
       - bench-sites:/home/frappe/frappe-bench
     labels:
