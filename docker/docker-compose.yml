@@ -9,7 +9,7 @@ services:
       - --skip-character-set-client-handshake
       - --skip-innodb-read-only-compressed
     environment:
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - mariadb-data:/var/lib/mysql
 
@@ -23,35 +23,38 @@ services:
       - mariadb
       - redis
     environment:
-      - SHELL=/bin/bash
-      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - SITE_NAME=${SITE_NAME}
-    # Inline the init.sh logic here:
-    command: >
-      bash -c "
-        echo '>>> Initializing bench…' &&
-        bench init --skip-redis-config-generation frappe-bench &&
-        cd frappe-bench &&
-        bench set-mariadb-host mariadb &&
-        bench set-redis-cache-host redis:6379 &&
-        bench set-redis-queue-host redis:6379 &&
-        bench set-redis-socketio-host redis:6379 &&
-        sed -i '/redis/d' ./Procfile &&
-        sed -i '/watch/d' ./Procfile &&
-        bench get-app crm --branch develop &&
+      SHELL: /bin/bash
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      SITE_NAME: ${SITE_NAME}
+    command:
+      - bash
+      - -lc
+      - |
+        set -e
+        echo ">>> Cleaning old bench…"
+        rm -rf frappe-bench
+        echo ">>> Initializing bench…"
+        bench init --skip-redis-config-generation frappe-bench
+        cd frappe-bench
+        bench set-mariadb-host mariadb
+        bench set-redis-cache-host redis:6379
+        bench set-redis-queue-host redis:6379
+        bench set-redis-socketio-host redis:6379
+        sed -i '/redis/d' Procfile
+        sed -i '/watch/d' Procfile
+        bench get-app crm --branch develop
         bench new-site ${SITE_NAME} \
           --force \
           --mariadb-root-password ${DB_ROOT_PASSWORD} \
           --admin-password admin \
-          --no-mariadb-socket &&
-        bench --site ${SITE_NAME} install-app crm &&
-        bench --site ${SITE_NAME} set-config developer_mode 0 &&
-        bench --site ${SITE_NAME} clear-cache &&
-        bench --site ${SITE_NAME} set-config mute_emails 1 &&
-        bench use ${SITE_NAME} &&
+          --no-mariadb-socket
+        bench --site ${SITE_NAME} install-app crm
+        bench --site ${SITE_NAME} set-config developer_mode 0
+        bench --site ${SITE_NAME} clear-cache
+        bench --site ${SITE_NAME} set-config mute_emails 1
+        bench use ${SITE_NAME}
+        echo ">>> Starting bench…"
         bench start
-      "
-    # Persist your sites & code:
     volumes:
       - bench-sites:/home/frappe/frappe-bench
     labels:
