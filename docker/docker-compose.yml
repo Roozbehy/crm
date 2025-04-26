@@ -18,7 +18,7 @@ services:
 
   bench:
     image: frappe/bench:latest
-    command: bash /workspace/docker/init.sh
+    command: bash /workspace/init.sh
     working_dir: /home/frappe
     depends_on:
       - mariadb
@@ -29,7 +29,7 @@ services:
       - SITE_NAME=${SITE_NAME}
     volumes:
       - type: bind
-        source: ..
+        source: .
         target: /workspace
     labels:
       - traefik.enable=true
