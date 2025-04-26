@@ -29,7 +29,7 @@ services:
       - SITE_NAME=${SITE_NAME}
     volumes:
       - type: bind
-        source: .
+        source: ./docker
         target: /workspace
     labels:
       - traefik.enable=true
