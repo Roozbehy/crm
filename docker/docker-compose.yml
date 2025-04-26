@@ -18,7 +18,8 @@ services:
 
   bench:
     image: frappe/bench:latest
-    command: bash /workspace/init.sh
+    # run the script we bind-mount as a single file
+    command: bash /init.sh
     working_dir: /home/frappe
     depends_on:
       - mariadb
@@ -28,10 +29,13 @@ services:
       - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - SITE_NAME=${SITE_NAME}
     volumes:
+      # ① bind only the script file (Coolify will not rewrite this)
       - type: bind
-        source: ./docker/init.sh
-        target: /workspace/init.sh
+        source: ./docker/init.sh      # path inside the repo
+        target: /init.sh
         read_only: true
+      # ② persist the bench data/sites
+      - bench-sites:/home/frappe/frappe-bench
     labels:
       - traefik.enable=true
       - "traefik.http.routers.crm.rule=Host(`${SITE_NAME}`)"
@@ -41,3 +45,4 @@ services:
 
 volumes:
   mariadb-data:
+  bench-sites:
