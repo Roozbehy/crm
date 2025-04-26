@@ -33,7 +33,7 @@ services:
         target: /workspace
     labels:
       - traefik.enable=true
-      - traefik.http.routers.crm.rule=Host(`${SITE_NAME}`)
+      - "traefik.http.routers.crm.rule=Host(`${SITE_NAME}`)"
       - traefik.http.routers.crm.entrypoints=websecure
       - traefik.http.routers.crm.tls.certresolver=letsencrypt
       - traefik.http.services.crm.loadbalancer.server.port=8000
